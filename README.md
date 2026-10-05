@@ -20,6 +20,8 @@ make demo
 curl "http://localhost:8000/api/v1/documents/search?query=кот"
 ```
 
+или открыть http://localhost:8000 в браузере.
+
 ```json
 [
   {
@@ -37,7 +39,7 @@ curl "http://localhost:8000/api/v1/documents/search?query=кот"
 ]
 ```
 
-Swagger: http://localhost:8000/docs, спецификация — `docs.json`.
+Веб-интерфейс для поиска: http://localhost:8000, документация API (Swagger): http://localhost:8000/docs, спецификация — `docs.json`.
 
 ## Полный датасет
 

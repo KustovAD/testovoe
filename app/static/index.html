@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Поиск по документам</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --surface: #fff; --text: #1d2330; --muted: #6b7280; --border: #e3e6eb;
+    --accent: #2f6fed; --accent-hover: #2459c7; --danger: #d23c3c; --chip: #eef2fb; --chip-text: #34508f;
+    --shadow: 0 1px 2px rgba(16, 24, 40, .06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151b; --surface: #1a1f27; --text: #e6e8ec; --muted: #9aa3b2; --border: #2a313c;
+      --accent: #5b8cff; --accent-hover: #7aa2ff; --danger: #f06464; --chip: #232c3d; --chip-text: #a9bdf0;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 48px 16px 64px; }
+  header { margin-bottom: 28px; }
+  h1 { margin: 0 0 6px; font-size: 28px; letter-spacing: -.01em; }
+  .subtitle { margin: 0; color: var(--muted); }
+  form { display: flex; gap: 8px; }
+  input[type=search] {
+    flex: 1; min-width: 0; padding: 12px 14px; font: inherit; color: inherit;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px; outline: none;
+  }
+  input[type=search]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent); }
+  button { font: inherit; cursor: pointer; border-radius: 10px; border: 1px solid transparent; }
+  .btn-primary { padding: 0 20px; background: var(--accent); color: #fff; font-weight: 600; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-primary:disabled { opacity: .6; cursor: default; }
+  .hints { margin: 12px 0 0; color: var(--muted); font-size: 14px; }
+  .hints button { background: none; border: 0; padding: 0; color: var(--accent); font-size: 14px; }
+  .hints button:hover { text-decoration: underline; }
+  .status { margin: 28px 0 12px; color: var(--muted); font-size: 14px; min-height: 21px; }
+  .status.error { color: var(--danger); }
+  .list { display: grid; gap: 12px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px 18px; box-shadow: var(--shadow); transition: opacity .2s, transform .2s;
+  }
+  .card.removing { opacity: 0; transform: scale(.98); }
+  .meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+  .meta .id { font-variant-numeric: tabular-nums; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { background: var(--chip); color: var(--chip-text); padding: 1px 8px; border-radius: 999px; font-size: 12px; }
+  .text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .text.clamped { display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+  .actions { display: flex; align-items: center; gap: 12px; margin-top: 12px; font-size: 14px; }
+  .link { background: none; border: 0; padding: 0; color: var(--accent); }
+  .link.danger { color: var(--danger); margin-left: auto; }
+  .confirm { margin-left: auto; display: flex; gap: 10px; align-items: center; color: var(--muted); }
+  .empty { text-align: center; color: var(--muted); padding: 40px 0; }
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px);
+    background: #1d2330; color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 14px;
+    opacity: 0; transition: .25s; pointer-events: none; max-width: calc(100% - 32px);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%); }
+  footer { margin-top: 40px; font-size: 14px; color: var(--muted); }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+  @media (max-width: 480px) { .wrap { padding-top: 28px; } h1 { font-size: 24px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Поиск по документам</h1>
+    <p class="subtitle">Введите слово или фразу — покажем до 20 самых подходящих документов, сначала новые.</p>
+  </header>
+
+  <form id="form" role="search">
+    <input id="q" type="search" placeholder="Например, «кот» или «ремонт дороги»" autocomplete="off" maxlength="1000" autofocus>
+    <button class="btn-primary" id="submit" type="submit">Найти</button>
+  </form>
+  <p class="hints">Попробуйте:
+    <button type="button" data-q="кот">кот</button>,
+    <button type="button" data-q="футбол">футбол</button>,
+    <button type="button" data-q="ремонт дороги">ремонт дороги</button>
+  </p>
+
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="list" id="list"></div>
+
+  <footer>
+    <a href="/docs">Документация API</a>
+  </footer>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const form = $("form"), input = $("q"), list = $("list"), statusEl = $("status"), submitBtn = $("submit");
+  const dateFmt = new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  let shown = 0;
+
+  function plural(n, one, few, many) {
+    const m10 = n % 10, m100 = n % 100;
+    if (m10 === 1 && m100 !== 11) return one;
+    if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
+    return many;
+  }
+
+  function setStatus(text, isError = false) {
+    statusEl.textContent = text;
+    statusEl.classList.toggle("error", isError);
+  }
+
+  function updateCount() {
+    setStatus(shown ? `Найдено ${shown} ${plural(shown, "документ", "документа", "документов")}` : "");
+    if (!shown) list.innerHTML = '<div class="empty">Ничего не найдено. Попробуйте другой запрос.</div>';
+  }
+
+  let toastTimer;
+  function toast(text) {
+    const t = $("toast");
+    t.textContent = text;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove("show"), 2500);
+  }
+
+  async function errorText(resp) {
+    try { return (await resp.json()).detail || `Ошибка ${resp.status}`; }
+    catch { return `Ошибка ${resp.status}`; }
+  }
+
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  function renderCard(doc) {
+    const card = el("article", "card");
+
+    const meta = el("div", "meta");
+    meta.append(el("span", "id", `№ ${doc.id}`), el("span", null, dateFmt.format(new Date(doc.created_date))));
+    if (doc.rubrics.length) {
+      const chips = el("div", "chips");
+      doc.rubrics.forEach((r) => chips.append(el("span", "chip", r)));
+      meta.append(chips);
+    }
+
+    const text = el("p", "text", doc.text);
+    const actions = el("div", "actions");
+
+    if (doc.text.length > 400) {
+      text.classList.add("clamped");
+      const more = el("button", "link", "Показать полностью");
+      more.type = "button";
+      more.onclick = () => {
+        const clamped = text.classList.toggle("clamped");
+        more.textContent = clamped ? "Показать полностью" : "Свернуть";
+      };
+      actions.append(more);
+    }
+
+    const del = el("button", "link danger", "Удалить");
+    del.type = "button";
+    del.onclick = () => askDelete(doc.id, card, actions, del);
+    actions.append(del);
+
+    card.append(meta, text, actions);
+    return card;
+  }
+
+  function askDelete(id, card, actions, delBtn) {
+    delBtn.hidden = true;
+    const box = el("div", "confirm", "Удалить документ?");
+    const yes = el("button", "link danger", "Да, удалить");
+    const no = el("button", "link", "Отмена");
+    yes.type = no.type = "button";
+    yes.style.marginLeft = "0";
+    no.onclick = () => { box.remove(); delBtn.hidden = false; };
+    yes.onclick = async () => {
+      yes.disabled = no.disabled = true;
+      try {
+        const resp = await fetch(`/api/v1/documents/${id}`, { method: "DELETE" });
+        if (!resp.ok && resp.status !== 404) throw new Error(await errorText(resp));
+        card.classList.add("removing");
+        setTimeout(() => { card.remove(); shown--; updateCount(); }, 200);
+        toast(`Документ № ${id} удалён`);
+      } catch (e) {
+        toast(e.message || "Не удалось удалить документ");
+        box.remove(); delBtn.hidden = false;
+      }
+    };
+    box.append(yes, no);
+    actions.append(box);
+  }
+
+  async function search(query) {
+    query = query.trim();
+    if (!query) { input.focus(); return; }
+    const url = new URL(location);
+    url.searchParams.set("q", query);
+    history.replaceState(null, "", url);
+
+    submitBtn.disabled = true;
+    setStatus("Ищем…");
+    try {
+      const resp = await fetch(`/api/v1/documents/search?query=${encodeURIComponent(query)}`);
+      if (!resp.ok) throw new Error(await errorText(resp));
+      const docs = await resp.json();
+      list.replaceChildren(...docs.map(renderCard));
+      shown = docs.length;
+      updateCount();
+    } catch (e) {
+      list.replaceChildren();
+      setStatus(e instanceof TypeError ? "Сервис недоступен. Попробуйте позже." : e.message, true);
+    } finally {
+      submitBtn.disabled = false;
+    }
+  }
+
+  form.addEventListener("submit", (e) => { e.preventDefault(); search(input.value); });
+  document.querySelectorAll(".hints [data-q]").forEach((b) =>
+    b.addEventListener("click", () => { input.value = b.dataset.q; search(b.dataset.q); })
+  );
+
+  const initial = new URLSearchParams(location.search).get("q");
+  if (initial) { input.value = initial; search(initial); }
+</script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Document Search Service",
+    "title": "Поиск по документам",
     "version": "1.0.0",
     "description": "Простой поисковик по текстам документов (PostgreSQL + Elasticsearch)."
   },
@@ -14,7 +14,7 @@
     "/api/v1/documents/search": {
       "get": {
         "tags": [
-          "documents"
+          "Документы"
         ],
         "summary": "Поиск документов",
         "operationId": "search_documents",
@@ -31,7 +31,7 @@
               "maxLength": 1000,
               "title": "Query"
             },
-            "example": "кошка"
+            "example": "кот"
           }
         ],
         "responses": {
@@ -50,11 +50,11 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Некорректный запрос",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorOut"
                 }
               }
             }
@@ -65,7 +65,7 @@
     "/api/v1/documents/{doc_id}": {
       "delete": {
         "tags": [
-          "documents"
+          "Документы"
         ],
         "summary": "Удаление документа",
         "operationId": "delete_document",
@@ -78,8 +78,9 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "title": "Doc Id"
-            }
+              "title": "Идентификатор документа"
+            },
+            "description": "Идентификатор документа"
           }
         ],
         "responses": {
@@ -97,11 +98,11 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Некорректный запрос",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorOut"
                 }
               }
             }
@@ -112,7 +113,7 @@
     "/health": {
       "get": {
         "tags": [
-          "service"
+          "Сервис"
         ],
         "summary": "Проверка работоспособности",
         "operationId": "health",
@@ -122,13 +123,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "string",
-                      "example": "ok"
-                    }
-                  }
+                  "$ref": "#/components/schemas/HealthOut"
                 }
               }
             }
@@ -141,7 +136,7 @@
     "schemas": {
       "DocumentOut": {
         "type": "object",
-        "title": "DocumentOut",
+        "title": "Документ",
         "required": [
           "id",
           "rubrics",
@@ -151,7 +146,7 @@
         "properties": {
           "id": {
             "type": "integer",
-            "title": "Id",
+            "title": "Идентификатор",
             "example": 1
           },
           "rubrics": {
@@ -159,84 +154,62 @@
             "items": {
               "type": "string"
             },
-            "title": "Rubrics",
+            "title": "Рубрики",
             "example": [
               "VK-1603736028819866"
             ]
           },
           "text": {
             "type": "string",
-            "title": "Text",
+            "title": "Текст",
             "example": "Моя кошка любит рыбу"
           },
           "created_date": {
             "type": "string",
             "format": "date-time",
-            "title": "Created Date",
+            "title": "Дата создания",
             "example": "2019-07-04T19:30:46"
           }
         }
       },
       "ErrorOut": {
         "type": "object",
-        "title": "ErrorOut",
+        "title": "Ошибка",
         "required": [
           "detail"
         ],
         "properties": {
           "detail": {
             "type": "string",
-            "title": "Detail",
-            "example": "Document not found"
+            "title": "Описание ошибки",
+            "example": "Документ не найден"
           }
         }
       },
-      "HTTPValidationError": {
+      "HealthOut": {
         "type": "object",
-        "title": "HTTPValidationError",
-        "properties": {
-          "detail": {
-            "type": "array",
-            "title": "Detail",
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
-            }
-          }
-        }
-      },
-      "ValidationError": {
-        "type": "object",
-        "title": "ValidationError",
+        "title": "Состояние сервиса",
         "required": [
-          "loc",
-          "msg",
-          "type"
+          "status"
         ],
         "properties": {
-          "loc": {
-            "type": "array",
-            "title": "Location",
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            }
-          },
-          "msg": {
+          "status": {
             "type": "string",
-            "title": "Message"
-          },
-          "type": {
-            "type": "string",
-            "title": "Error Type"
+            "title": "Статус",
+            "example": "ok"
           }
         }
       }
     }
-  }
+  },
+  "tags": [
+    {
+      "name": "Документы",
+      "description": "Поиск и удаление документов"
+    },
+    {
+      "name": "Сервис",
+      "description": "Служебные методы"
+    }
+  ]
 }

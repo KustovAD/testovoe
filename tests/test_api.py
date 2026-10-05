@@ -67,3 +67,32 @@ async def test_delete_missing_returns_404(client):
 async def test_delete_invalid_id(client):
     assert (await client.delete("/api/v1/documents/abc")).status_code == 422
     assert (await client.delete("/api/v1/documents/0")).status_code == 422
+
+
+async def test_index_page(client):
+    resp = await client.get("/")
+    assert resp.status_code == 200
+    assert "text/html" in resp.headers["content-type"]
+    assert "Поиск по документам" in resp.text
+
+
+async def test_docs_page_is_translated(client):
+    resp = await client.get("/docs")
+    assert resp.status_code == 200
+    assert 'lang="ru"' in resp.text
+    assert "Попробовать" in resp.text
+
+
+async def test_errors_are_in_russian(client):
+    resp = await client.delete("/api/v1/documents/999999")
+    assert resp.json() == {"detail": "Документ не найден"}
+
+    resp = await client.get(SEARCH)
+    assert resp.json() == {"detail": "Не передан обязательный параметр «query»"}
+
+    resp = await client.delete("/api/v1/documents/abc")
+    assert resp.json() == {"detail": "Параметр «doc_id» должен быть целым числом"}
+
+    resp = await client.get("/no-such-page")
+    assert resp.status_code == 404
+    assert resp.json() == {"detail": "Страница не найдена"}
