@@ -24,8 +24,7 @@
   }
   .wrap { max-width: 760px; margin: 0 auto; padding: 48px 16px 64px; }
   header { margin-bottom: 28px; }
-  h1 { margin: 0 0 6px; font-size: 28px; letter-spacing: -.01em; }
-  .subtitle { margin: 0; color: var(--muted); }
+  h1 { margin: 0; font-size: 28px; letter-spacing: -.01em; }
   form { display: flex; gap: 8px; }
   input[type=search] {
     flex: 1; min-width: 0; padding: 12px 14px; font: inherit; color: inherit;
@@ -36,9 +35,6 @@
   .btn-primary { padding: 0 20px; background: var(--accent); color: #fff; font-weight: 600; }
   .btn-primary:hover { background: var(--accent-hover); }
   .btn-primary:disabled { opacity: .6; cursor: default; }
-  .hints { margin: 12px 0 0; color: var(--muted); font-size: 14px; }
-  .hints button { background: none; border: 0; padding: 0; color: var(--accent); font-size: 14px; }
-  .hints button:hover { text-decoration: underline; }
   .status { margin: 28px 0 12px; color: var(--muted); font-size: 14px; min-height: 21px; }
   .status.error { color: var(--danger); }
   .list { display: grid; gap: 12px; }
@@ -74,18 +70,12 @@
 <div class="wrap">
   <header>
     <h1>Поиск по документам</h1>
-    <p class="subtitle">Введите слово или фразу — покажем до 20 самых подходящих документов, сначала новые.</p>
   </header>
 
   <form id="form" role="search">
-    <input id="q" type="search" placeholder="Например, «кот» или «ремонт дороги»" autocomplete="off" maxlength="1000" autofocus>
+    <input id="q" type="search" placeholder="Введите запрос" autocomplete="off" maxlength="1000" autofocus>
     <button class="btn-primary" id="submit" type="submit">Найти</button>
   </form>
-  <p class="hints">Попробуйте:
-    <button type="button" data-q="кот">кот</button>,
-    <button type="button" data-q="футбол">футбол</button>,
-    <button type="button" data-q="ремонт дороги">ремонт дороги</button>
-  </p>
 
   <div class="status" id="status" aria-live="polite"></div>
   <div class="list" id="list"></div>
@@ -224,9 +214,6 @@
   }
 
   form.addEventListener("submit", (e) => { e.preventDefault(); search(input.value); });
-  document.querySelectorAll(".hints [data-q]").forEach((b) =>
-    b.addEventListener("click", () => { input.value = b.dataset.q; search(b.dataset.q); })
-  );
 
   const initial = new URLSearchParams(location.search).get("q");
   if (initial) { input.value = initial; search(initial); }
