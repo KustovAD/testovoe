@@ -127,7 +127,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             swagger_ui_parameters={"defaultModelsExpandDepth": -1, "docExpansion": "list"},
         ).body.decode()
         translate = (STATIC_DIR / "swagger-ru.js").read_text(encoding="utf-8")
-        style = "<style>.info hgroup.main a, .info .version-stamp, .info .version { display: none; }</style>"
+        style = (
+            "<style>.info hgroup.main a, .info .version-stamp, .info .version { display: none; }"
+            '.swagger-ui .parameter__name.required::after { content: "обязательный" !important; }</style>'
+        )
         html = html.replace("</head>", f"{style}</head>")
         html = html.replace("</body>", f"<script>{translate}</script></body>")
         html = html.replace("<html>", '<html lang="ru">', 1)
