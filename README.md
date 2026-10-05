@@ -77,6 +77,11 @@ python -m app.load_data data/posts.csv --recreate
 uvicorn app.main:app --reload
 ```
 
+## Порты
+
+Наружу публикуются Postgres на `5433`, Elasticsearch на `9200` и сервис на `8000`.
+Если какой-то порт занят, его можно переопределить: `POSTGRES_PORT=15432 ES_PORT=19200 APP_PORT=8080 make demo`.
+
 ## Заметки
 
 - В индексе только `id` и `text`, остальное берётся из базы одним запросом по найденным id.

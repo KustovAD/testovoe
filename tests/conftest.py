@@ -27,7 +27,7 @@ SEED = [
 def settings() -> Settings:
     return Settings(
         database_url=os.getenv(
-            "TEST_DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/search_test"
+            "TEST_DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5433/search_test"
         ),
         es_url=os.getenv("TEST_ES_URL", os.getenv("ES_URL", "http://localhost:9200")),
         es_index=os.getenv("TEST_ES_INDEX", "documents_test"),
