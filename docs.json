@@ -109,27 +109,6 @@
           }
         }
       }
-    },
-    "/health": {
-      "get": {
-        "tags": [
-          "Сервис"
-        ],
-        "summary": "Проверка работоспособности",
-        "operationId": "health",
-        "responses": {
-          "200": {
-            "description": "Сервис работает",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HealthOut"
-                }
-              }
-            }
-          }
-        }
-      }
     }
   },
   "components": {
@@ -185,31 +164,7 @@
             "example": "Документ не найден"
           }
         }
-      },
-      "HealthOut": {
-        "type": "object",
-        "title": "Состояние сервиса",
-        "required": [
-          "status"
-        ],
-        "properties": {
-          "status": {
-            "type": "string",
-            "title": "Статус",
-            "example": "ok"
-          }
-        }
       }
     }
-  },
-  "tags": [
-    {
-      "name": "Документы",
-      "description": "Поиск и удаление документов"
-    },
-    {
-      "name": "Сервис",
-      "description": "Служебные методы"
-    }
-  ]
+  }
 }

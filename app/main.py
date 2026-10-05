@@ -12,7 +12,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.config import Settings, get_settings
 from app.db import create_tables, make_engine, make_sessionmaker
 from app.errors import http_error_message, validation_error_message
-from app.schemas import DocumentOut, ErrorOut, HealthOut
+from app.schemas import DocumentOut, ErrorOut
 from app.search import SearchIndex
 from app.service import DocumentService
 
@@ -42,10 +42,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         title="Поиск по документам",
         version="1.0.0",
         description="Простой поисковик по текстам документов (PostgreSQL + Elasticsearch).",
-        openapi_tags=[
-            {"name": "Документы", "description": "Поиск и удаление документов"},
-            {"name": "Сервис", "description": "Служебные методы"},
-        ],
         docs_url=None,
         redoc_url=None,
         lifespan=lifespan,
@@ -115,13 +111,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Документ не найден")
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-    @app.get(
-        "/health",
-        response_model=HealthOut,
-        tags=["Сервис"],
-        summary="Проверка работоспособности",
-        responses={200: {"description": "Сервис работает"}},
-    )
+    @app.get("/health", include_in_schema=False)
     async def health():
         return {"status": "ok"}
 
@@ -137,6 +127,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             swagger_ui_parameters={"defaultModelsExpandDepth": -1, "docExpansion": "list"},
         ).body.decode()
         translate = (STATIC_DIR / "swagger-ru.js").read_text(encoding="utf-8")
+        style = "<style>.info hgroup.main a, .info .version-stamp, .info .version { display: none; }</style>"
+        html = html.replace("</head>", f"{style}</head>")
         html = html.replace("</body>", f"<script>{translate}</script></body>")
         html = html.replace("<html>", '<html lang="ru">', 1)
         return HTMLResponse(html)

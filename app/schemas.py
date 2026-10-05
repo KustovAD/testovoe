@@ -17,8 +17,3 @@ class ErrorOut(BaseModel):
 
     detail: str = Field(title="Описание ошибки", examples=["Документ не найден"])
 
-
-class HealthOut(BaseModel):
-    model_config = ConfigDict(title="Состояние сервиса")
-
-    status: str = Field(title="Статус", examples=["ok"])
