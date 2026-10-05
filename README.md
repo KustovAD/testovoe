@@ -39,7 +39,7 @@ curl "http://localhost:8000/api/v1/documents/search?query=кот"
 ]
 ```
 
-Веб-интерфейс для поиска: http://localhost:8000, документация API (Swagger): http://localhost:8000/docs, спецификация — `docs.json`.
+Веб-интерфейс для поиска: http://localhost:8000. Спецификация API в формате OpenAPI — `docs.json`.
 
 ## Полный датасет
 

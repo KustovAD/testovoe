@@ -5,8 +5,7 @@ from typing import Annotated
 from elasticsearch import AsyncElasticsearch
 from fastapi import Depends, FastAPI, HTTPException, Path, Query, Request, Response, status
 from fastapi.exceptions import RequestValidationError
-from fastapi.openapi.docs import get_swagger_ui_html
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config import Settings, get_settings
@@ -44,6 +43,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         description="Простой поисковик по текстам документов (PostgreSQL + Elasticsearch).",
         docs_url=None,
         redoc_url=None,
+        openapi_url=None,
         lifespan=lifespan,
     )
 
@@ -118,23 +118,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/", include_in_schema=False)
     async def index_page():
         return FileResponse(STATIC_DIR / "index.html", headers={"Cache-Control": "no-cache"})
-
-    @app.get("/docs", include_in_schema=False)
-    async def swagger_page():
-        html = get_swagger_ui_html(
-            openapi_url=app.openapi_url,
-            title="Поиск по документам — документация API",
-            swagger_ui_parameters={"defaultModelsExpandDepth": -1, "docExpansion": "list"},
-        ).body.decode()
-        translate = (STATIC_DIR / "swagger-ru.js").read_text(encoding="utf-8")
-        style = (
-            "<style>.info hgroup.main a, .info .version-stamp, .info .version { display: none; }"
-            '.swagger-ui .parameter__name.required::after { content: "обязательный" !important; }</style>'
-        )
-        html = html.replace("</head>", f"{style}</head>")
-        html = html.replace("</body>", f"<script>{translate}</script></body>")
-        html = html.replace("<html>", '<html lang="ru">', 1)
-        return HTMLResponse(html)
 
     return app
 

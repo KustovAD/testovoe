@@ -60,9 +60,8 @@
     opacity: 0; transition: .25s; pointer-events: none; max-width: calc(100% - 32px);
   }
   .toast.show { opacity: 1; transform: translateX(-50%); }
-  footer { margin-top: 40px; font-size: 14px; color: var(--muted); }
-  footer a { color: var(--accent); text-decoration: none; }
-  footer a:hover { text-decoration: underline; }
+  .about { margin: 16px 0 0; padding: 0; list-style: none; color: var(--muted); font-size: 14px; display: grid; gap: 4px; }
+  .about li::before { content: "•"; margin-right: 8px; color: var(--accent); }
   @media (max-width: 480px) { .wrap { padding-top: 28px; } h1 { font-size: 24px; } }
 </style>
 </head>
@@ -76,13 +75,15 @@
     <input id="q" type="search" placeholder="Введите запрос" autocomplete="off" maxlength="1000" autofocus>
     <button class="btn-primary" id="submit" type="submit">Найти</button>
   </form>
+  <ul class="about">
+    <li>Поиск идёт по тексту документов с учётом словоформ: по запросу «кот» найдутся и «кота», и «коты».</li>
+    <li>Показываются до 20 самых подходящих документов, отсортированных по дате создания — сначала новые.</li>
+    <li>Документ можно удалить — он исчезнет и из базы, и из поискового индекса.</li>
+  </ul>
 
   <div class="status" id="status" aria-live="polite"></div>
   <div class="list" id="list"></div>
 
-  <footer>
-    <a href="/docs">Документация API</a>
-  </footer>
 </div>
 <div class="toast" id="toast" role="status"></div>
 

@@ -76,11 +76,9 @@ async def test_index_page(client):
     assert "Поиск по документам" in resp.text
 
 
-async def test_docs_page_is_translated(client):
-    resp = await client.get("/docs")
-    assert resp.status_code == 200
-    assert 'lang="ru"' in resp.text
-    assert "Попробовать" in resp.text
+async def test_api_docs_are_disabled(client):
+    assert (await client.get("/docs")).status_code == 404
+    assert (await client.get("/openapi.json")).status_code == 404
 
 
 async def test_errors_are_in_russian(client):
