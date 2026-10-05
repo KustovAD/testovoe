@@ -1,12 +1,22 @@
-# search-service
+# Поиск по документам
 
 [![tests](https://github.com/KustovAD/testovoe/actions/workflows/tests.yml/badge.svg)](https://github.com/KustovAD/testovoe/actions/workflows/tests.yml)
 
-Простой поисковик по текстам документов: FastAPI + PostgreSQL + Elasticsearch, всё асинхронно, запускается в Docker.
+Сервис полнотекстового поиска по документам. Документы хранятся в PostgreSQL, поисковый индекс — в Elasticsearch.
 
-## Быстрый старт
+**Стек:** Python 3.12, FastAPI, SQLAlchemy 2.0 (asyncpg), Elasticsearch 8, Docker Compose, pytest.
 
-Нужен только Docker. В репозитории есть небольшой демо-датасет `data/sample.csv`:
+## Возможности
+
+- поиск по тексту документа с учётом морфологии (русский и английский языки);
+- выдача до 20 наиболее релевантных документов со всеми полями из БД, упорядоченных по дате создания (сначала новые);
+- удаление документа по `id` из БД и индекса;
+- веб-интерфейс для поиска и удаления;
+- полностью асинхронная работа с БД и Elasticsearch.
+
+## Запуск
+
+Требуется Docker (Docker Desktop для macOS/Windows).
 
 ```bash
 git clone https://github.com/KustovAD/testovoe.git
@@ -14,78 +24,108 @@ cd testovoe
 make demo
 ```
 
-После этого:
+Команда собирает и запускает сервис, PostgreSQL и Elasticsearch, после чего загружает демонстрационные данные из `data/sample.csv`.
+Веб-интерфейс доступен по адресу http://localhost:8000.
 
-```bash
-curl "http://localhost:8000/api/v1/documents/search?query=кот"
-```
+### Загрузка полного набора данных
 
-или открыть http://localhost:8000 в браузере.
-
-```json
-[
-  {
-    "id": 10,
-    "rubrics": ["VK-1603736028819866"],
-    "text": "Кот соседа каждое утро сидит у нас на балконе и ждёт завтрак.",
-    "created_date": "2020-02-18T08:05:17"
-  },
-  {
-    "id": 4,
-    "rubrics": ["VK-1603736028819866", "VK-77"],
-    "text": "Котята ищут дом! Три кошечки и один кот, приучены к лотку.",
-    "created_date": "2020-01-10T14:03:55"
-  }
-]
-```
-
-Веб-интерфейс для поиска: http://localhost:8000. Спецификация API в формате OpenAPI — `docs.json`.
-
-## Полный датасет
-
-Положить файл в `data/posts.csv` (колонки `text, created_date, rubrics`) и выполнить:
+Поместите файл в `data/posts.csv` и выполните:
 
 ```bash
 make up
 make load
 ```
 
-Без make: `docker compose up -d --build && docker compose run --rm loader`.
+Формат CSV: колонки `text`, `created_date`, `rubrics` (например, `"['VK-1603736028819866', 'VK-12']"`), колонка `id` — необязательная.
+Загрузка пересоздаёт таблицу и индекс.
+
+### Без make
+
+```bash
+docker compose up -d --build
+docker compose run --rm loader
+```
+
+Для загрузки демо-данных вместо `data/posts.csv`: `DATA_FILE=data/sample.csv docker compose run --rm loader`.
+
+Остановка: `make down` (или `docker compose down`; с флагом `-v` удаляются и данные).
 
 ## API
 
-- `GET /api/v1/documents/search?query=<текст>` — до 20 документов, найденных в индексе, отсортированы по `created_date` (сначала новые)
-- `DELETE /api/v1/documents/{id}` — удаляет документ из базы и индекса (204 / 404)
+Спецификация в формате OpenAPI — [`docs.json`](docs.json).
+
+| Метод    | Путь                                   | Описание |
+|----------|----------------------------------------|----------|
+| `GET`    | `/api/v1/documents/search?query=<текст>` | Поиск документов |
+| `DELETE` | `/api/v1/documents/{id}`               | Удаление документа: `204` — удалён, `404` — не найден |
+
+Пример ответа поиска:
+
+```json
+[
+  {
+    "id": 12,
+    "rubrics": ["VK-45"],
+    "text": "Сборная выиграла товарищеский матч по футболу со счётом 2:1.",
+    "created_date": "2019-11-20T22:15:03"
+  }
+]
+```
+
+Ошибки возвращаются в формате `{"detail": "<описание>"}`.
 
 ## Тесты
 
 ```bash
-make test   # или docker compose run --rm tests
+make test
 ```
 
-Тесты функциональные — ходят в настоящие Postgres и Elasticsearch. В CI они же гоняются через GitHub Actions.
+Функциональные тесты работают с реальными PostgreSQL и Elasticsearch, используя отдельную базу `search_test` и индекс `documents_test`.
+Тесты также запускаются в GitHub Actions при каждом push.
 
-Тесты используют отдельную базу `search_test` и индекс `documents_test`. База создаётся
-init-скриптом при первом старте postgres, так что если volume уже был — `docker compose down -v`.
+База `search_test` создаётся при первой инициализации PostgreSQL. Если volume был создан ранее, пересоздайте его: `docker compose down -v`.
 
-## Без докера
+## Локальный запуск без Docker
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
+python3.12 -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
 docker compose up -d postgres elasticsearch
 cp .env.example .env
-python -m app.load_data data/posts.csv --recreate
+python -m app.load_data data/sample.csv --recreate
 uvicorn app.main:app --reload
+pytest
 ```
 
-## Порты
+## Конфигурация
 
-Наружу публикуются Postgres на `5433`, Elasticsearch на `9200` и сервис на `8000`.
-Если какой-то порт занят, его можно переопределить: `POSTGRES_PORT=15432 ES_PORT=19200 APP_PORT=8080 make demo`.
+| Переменная      | По умолчанию                                                  | Описание |
+|-----------------|---------------------------------------------------------------|----------|
+| `DATABASE_URL`  | `postgresql+asyncpg://postgres:postgres@localhost:5433/search` | Подключение к PostgreSQL |
+| `ES_URL`        | `http://localhost:9200`                                        | Адрес Elasticsearch |
+| `ES_INDEX`      | `documents`                                                    | Имя индекса |
+| `SEARCH_LIMIT`  | `20`                                                           | Количество документов в выдаче |
+| `POSTGRES_PORT` | `5433`                                                         | Порт PostgreSQL на хосте |
+| `ES_PORT`       | `9200`                                                         | Порт Elasticsearch на хосте |
+| `APP_PORT`      | `8000`                                                         | Порт сервиса на хосте |
 
-## Заметки
+## Устройство
 
-- В индексе только `id` и `text`, остальное берётся из базы одним запросом по найденным id.
-- Для текста настроен анализатор со стеммингом (ru + en), поэтому «кошкам» находит «кошка».
-- При удалении документ сначала удаляется из базы в транзакции, потом из ES; если ES упал — транзакция откатывается.
+- В индексе хранятся только `id` и `text`. Поиск выполняется в Elasticsearch, затем полные записи для найденных `id` запрашиваются из PostgreSQL одним запросом и сортируются по `created_date`.
+- Для поля `text` настроен анализатор со стеммингом и стоп-словами для русского языка и стеммингом для английского.
+- Удаление выполняется в транзакции БД: если удаление из индекса завершилось ошибкой, транзакция откатывается и данные остаются согласованными.
+
+```
+app/
+  main.py        — приложение FastAPI, маршруты, обработка ошибок
+  service.py     — логика поиска и удаления
+  search.py      — работа с Elasticsearch
+  db.py          — модель и подключение к PostgreSQL
+  schemas.py     — схемы ответов
+  errors.py      — сообщения об ошибках
+  config.py      — настройки
+  load_data.py   — загрузка CSV в БД и индекс
+  static/        — веб-интерфейс
+tests/           — функциональные тесты
+docs.json        — спецификация OpenAPI
+```
